@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import concat from '@vituum/vite-plugin-concat'
 
 export default defineConfig({
   root: 'src',
@@ -8,8 +7,6 @@ export default defineConfig({
     emptyOutDir: true
   },
   plugins: [
-    concat({
-        input: ['app.js']
-    })
+
   ]
 })

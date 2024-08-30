@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Image Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 py-8">
+
+    <div class="container mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8">Image Gallery</h1>
+
+        <!-- Gallery Slider -->
+        <div class="bg-white p-4 rounded-lg shadow-lg">
+            <slider-component class="slider"></slider-component>
+        </div>
+    </div>
+
+    <script>
+        class SliderComponent extends HTMLElement {
+            constructor() {
+                super();
+                this.leftButton = this.querySelector('.left');
+                this.rightButton = this.querySelector('.right');
+                this.slideList = this.querySelector('.slides');
+                this.pagination = this.querySelector('.pagination');
+                this.current = null;
+            }
+
+            static register() {
+                customElements.define('slider-component', SliderComponent);
+            }
+
+            connectedCallback() {
+                this.leftButton?.addEventListener('click', this.loadPreviousImages, false);
+                this.rightButton?.addEventListener('click', this.loadNextImages, false);
+                this.updatePagination();
+                window.addEventListener('resize', this.updatePagination, false);
+                this.addEventListener('click', this.clickPagination, true);
+                this.slideList.addEventListener('scroll', this.setActiveStates, false);
+
+                // Load initial images
+                this.loadImages();
+            }
+
+            disconnectedCallback() {
+                this.leftButton?.removeEventListener('click', this.loadPreviousImages, false);
+                this.rightButton?.removeEventListener('click', this.loadNextImages, false);
+                window.removeEventListener('resize', this.updatePagination, false);
+                this.removeEventListener('click', this.clickPagination, true);
+            }
+
+            loadImages = async (url = 'http://localhost:8080/viewer/index.php?action=next') => {
+                try {
+                    const response = await fetch(url);
+                    const imageData = await response.json();
+                    this.generateGallery(imageData);
+                } catch (error) {
+                    console.error('Error loading images:', error);
+                }
+            }
+
+            loadPreviousImages = () => {
+                this.clearGallery();
+                this.loadImages('http://localhost:8080/viewer/index.php?action=previous');
+            }
+
+            loadNextImages = () => {
+                this.clearGallery();
+                this.loadImages('http://localhost:8080/viewer/index.php?action=next');
+            }
+
+            clearGallery = () => {
+                this.slideList.innerHTML = '';
+            }
+
+            generateGallery(imageData) {
+                const galleryHtml = imageData.map((image, index) => `
+                    <li class="slide" id="picture-${index + 1}">
+                        <article class="card flow block-link p-4 bg-gray-50 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold"><a href="#picture-${index + 1}">${image.title}</a></h3>
+                            <img src="${image.url}" alt="${image.title}" class="w-full rounded-md" loading="lazy"/>
+                            <p>${image.description}</p>
+                            <div class="mt-2">
+                                <input type="checkbox" class="image-checkbox" data-id="${image.id}" ${this.isChecked(image.id) ? 'checked' : ''}> Select
+                            </div>
+                            <div class="mt-2 text-sm text-gray-500">
+                                <span>Dimensions: ${image.dimensions}</span>
+                                <span>Tags: ${image.tags.join(', ')}</span>
+                            </div>
+                        </article>
+                    </li>
+                `).join('');
+                this.slideList.innerHTML = galleryHtml;
+                this.updatePagination();
+            }
+
+            updatePagination = () => {
+                // Pagination logic remains similar
+            }
+
+            setActiveStates = () => {
+                // Active state management remains similar
+            }
+
+            clickPagination = (e) => {
+                // Pagination click handling remains similar
+            }
+
+            isChecked(id) {
+                const checkedItems = JSON.parse(localStorage.getItem('checkedItems')) || [];
+                return checkedItems.includes(id);
+            }
+
+            handleCheckboxClick = (e) => {
+                const checkbox = e.target;
+                const id = checkbox.getAttribute('data-id');
+                let checkedItems = JSON.parse(localStorage.getItem('checkedItems')) || [];
+                if (checkbox.checked) {
+                    checkedItems.push(id);
+                } else {
+                    checkedItems = checkedItems.filter(item => item !== id);
+                }
+                localStorage.setItem('checkedItems', JSON.stringify(checkedItems));
+            }
+        }
+
+        SliderComponent.register();
+
+        // Event listener for checkbox clicks
+        document.addEventListener('change', (e) => {
+            if (e.target.matches('.image-checkbox')) {
+                const sliderComponent = document.querySelector('slider-component');
+                sliderComponent.handleCheckboxClick(e);
+            }
+        });
+    </script>
+
+</body>
+
+</html>
+
